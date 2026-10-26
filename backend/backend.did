@@ -1,0 +1,186 @@
+type Upgrade = 
+ variant {
+   bag;
+   detector;
+   lamp;
+   pick;
+ };
+type SubmitError = 
+ variant {
+   alreadySubmitted;
+   anonymous;
+   expired;
+   invalidMove: nat;
+   noShift;
+   tooLong: nat;
+ };
+type StartError = 
+ variant {
+   anonymous;
+   busy;
+   ledgerUnavailable: text;
+ };
+type ShopError = 
+ variant {
+   anonymous;
+   maxed;
+   notEnoughCoins: record {
+                     coins: nat;
+                     cost: nat;
+                   };
+ };
+type ShiftView = 
+ record {
+   bag: nat;
+   day: Day;
+   detector: nat;
+   endsAt: int;
+   energy: nat;
+   lamp: nat;
+   maxBiome: nat;
+   pick: nat;
+   result: opt ShiftResult;
+   rushClaims: vec nat;
+   seed: nat;
+   streak: nat;
+   tier: nat;
+   verified: bool;
+ };
+type ShiftResult = 
+ record {
+   counts: vec nat;
+   gems: nat;
+   maxDepth: nat;
+   newBest: bool;
+   rank: nat;
+   score: nat;
+ };
+type RushError = 
+ variant {
+   alreadyClaimed;
+   anonymous;
+   noRush;
+   noShift;
+   shiftOver;
+ };
+type Result_6 = 
+ variant {
+   err: ShopError;
+   ok: ProfileView;
+ };
+type Result_5 = 
+ variant {
+   err: RushError;
+   ok: ShiftView;
+ };
+type Result_4 = 
+ variant {
+   err: RecheckError;
+   ok: ShiftView;
+ };
+type Result_3 = 
+ variant {
+   err: AdminError;
+   ok;
+ };
+type Result_2 = 
+ variant {
+   err: NameError;
+   ok: text;
+ };
+type Result_1 = 
+ variant {
+   err: StartError;
+   ok: ShiftView;
+ };
+type Result = 
+ variant {
+   err: SubmitError;
+   ok: ShiftResult;
+ };
+type RecheckError = 
+ variant {
+   anonymous;
+   ledgerUnavailable: text;
+   noShift;
+   tooSoon: record {retryAfterSeconds: nat;};
+ };
+type ProfileView = 
+ record {
+   album: vec nat;
+   bag: nat;
+   bestDay: nat;
+   coins: nat;
+   detector: nat;
+   lamp: nat;
+   name: opt text;
+   pick: nat;
+   shifts: nat;
+   streak: nat;
+   tier: nat;
+   totalScore: nat;
+ };
+type NameError = 
+ variant {
+   anonymous;
+   invalid: text;
+ };
+type GameConfig = 
+ record {
+   baseEnergy: nat;
+   rushEnergy: nat;
+   tierEnergy: nat;
+   tierMinHolding: vec nat;
+   upgradeCosts: vec nat;
+ };
+type FameRow = 
+ record {
+   bestDay: nat;
+   kinds: nat;
+   name: opt text;
+   player: principal;
+   rank: nat;
+   totalScore: nat;
+ };
+type DayRow = 
+ record {
+   gems: nat;
+   maxDepth: nat;
+   name: opt text;
+   player: principal;
+   rank: nat;
+   score: nat;
+ };
+type Day = nat;
+type Community = 
+ record {
+   blocksToday: nat;
+   day: Day;
+   gemsToday: nat;
+   lastBlockAt: int;
+   now: int;
+   playersToday: nat;
+   rushId: nat;
+   rushUntil: int;
+ };
+type AdminError = 
+ variant {
+   notController;
+   unknownTier: nat;
+ };
+service : {
+  buyUpgrade: (kind: Upgrade) -> (Result_6);
+  claimRush: () -> (Result_5);
+  community: () -> (Community) query;
+  config: () -> (GameConfig) query;
+  dayBoard: (day: opt Day, limit: nat) -> (vec DayRow) query;
+  hallOfFame: (limit: nat) -> (vec FameRow) query;
+  myShift: (player: principal) -> (opt ShiftView) query;
+  profile: (player: principal) -> (opt ProfileView) query;
+  recheckHolding: () -> (Result_4);
+  refreshMarket: () -> (Community);
+  setMinHolding: (tier: nat, e8s: nat) -> (Result_3);
+  setName: (raw: text) -> (Result_2);
+  startShift: () -> (Result_1);
+  submitShift: (moves: blob) -> (Result);
+}

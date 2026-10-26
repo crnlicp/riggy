@@ -1,0 +1,6 @@
+node_modules
+dist
+.icp/cache
+.ref
+.mops
+src/bindings

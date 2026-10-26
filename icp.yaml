@@ -1,0 +1,12 @@
+canisters:
+  - name: backend
+    recipe:
+      type: "@dfinity/motoko@v5.0.0"
+  - name: frontend
+    recipe:
+      type: "@dfinity/static-site@v0.4.0"
+      configuration:
+        build:
+          - npm ci
+          - npm run build
+        dir: dist

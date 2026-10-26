@@ -1,0 +1,157 @@
+.mining-pickaxe {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 50%;
+  width: clamp(32px, 160%, 76px);
+  aspect-ratio: 165 / 153;
+  transform-origin: 0 0;
+  pointer-events: none;
+  /* Place the grip behind the target; the tip traces a clockwise quarter-circle. */
+  transform: rotate(var(--strike-direction)) translateX(-55.71%);
+  filter: drop-shadow(0 2px 3px #090510);
+}
+
+.mining-pickaxe-swing {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-origin: 0 0;
+  animation: mining-strike var(--strike-duration) linear both;
+}
+
+.mining-pickaxe img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  /* Pivot at the bottom of the supplied icon's handle, not at its sharp tip. */
+  transform: translate(-75.76%, -76.47%);
+}
+
+.mining-pickaxe.from-right { --strike-direction: 0deg; }
+.mining-pickaxe.from-down { --strike-direction: 90deg; }
+.mining-pickaxe.from-left { --strike-direction: 180deg; }
+.mining-pickaxe.from-up { --strike-direction: 270deg; }
+
+@keyframes mining-strike {
+  0% { opacity: 0; transform: rotate(14.49deg); }
+  20% { opacity: 1; transform: rotate(14.49deg); animation-timing-function: cubic-bezier(.55,0,.9,.45); }
+  62%, 68% { opacity: 1; transform: rotate(104.49deg); animation-timing-function: ease-out; }
+  82% { opacity: 1; transform: rotate(96.49deg); }
+  100% { opacity: 0; transform: rotate(88.49deg); }
+}
+
+.mining-burst {
+  position: absolute;
+  z-index: 11;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.mining-burst.firework::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  border: 2px solid #ffcf70;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff5cc, #ffab4644 35%, transparent 65%);
+  animation: mining-flash 700ms ease-out both;
+}
+
+.mining-burst.stone-impact::before { inset: -45%; }
+.mining-burst.stone-impact i::before { width: 30%; height: 7%; }
+
+.mining-burst i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  animation: mining-firework 700ms ease-out both;
+  animation-delay: var(--particle-delay);
+}
+
+.mining-burst i::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24%;
+  height: 5%;
+  border-radius: 50%;
+  background: #ffe99a;
+  box-shadow: 0 0 5px #ff9d35, 0 0 9px #ff7135;
+  transform: translate(-50%, -50%) rotate(var(--particle-angle));
+}
+
+.mining-burst.firework i:nth-child(3n)::before { background: #fff; }
+.mining-burst.firework i:nth-child(3n + 1)::before { background: #ff965e; }
+.mining-burst.confetti i { animation-name: mining-confetti; animation-duration: var(--collection-duration); }
+.mining-burst.confetti i::before {
+  width: 18%;
+  height: 30%;
+  border-radius: 1px;
+  background: var(--loot-color);
+  box-shadow: none;
+  animation: mining-confetti-spin var(--collection-duration) ease-out both;
+}
+
+.mining-burst.confetti i:nth-child(4n)::before { background: #ff78bb; }
+.mining-burst.confetti i:nth-child(4n + 1)::before { background: #ffde66; }
+.mining-burst.confetti i:nth-child(4n + 2)::before { background: #82cfff; }
+
+.mining-loot {
+  z-index: 1;
+  font-size: clamp(16px, 1.3rem, 24px);
+  font-style: normal;
+  font-weight: normal;
+  filter: drop-shadow(0 0 8px var(--loot-color));
+  animation: mining-loot-pop var(--collection-duration) ease-out both;
+}
+
+@keyframes mining-flash {
+  0% { opacity: 0; transform: scale(.2); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+@keyframes mining-firework {
+  0% { opacity: 0; transform: translate(0, 0) scale(.3); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--particle-x), var(--particle-y)) scale(.65); }
+}
+
+@keyframes mining-confetti {
+  0% { opacity: 0; transform: translate(0, 0); }
+  12% { opacity: 1; }
+  55% { opacity: 1; transform: translate(var(--particle-x), calc(var(--particle-y) - 35%)); }
+  100% { opacity: 0; transform: translate(var(--particle-x), calc(var(--particle-y) + 65%)); }
+}
+
+@keyframes mining-confetti-spin {
+  from { transform: translate(-50%, -50%) rotate(var(--particle-angle)); }
+  to { transform: translate(-50%, -50%) rotate(var(--particle-spin)) rotateY(240deg); }
+}
+
+@keyframes mining-loot-pop {
+  0% { opacity: 0; transform: scale(.4); }
+  40% { opacity: 1; transform: scale(1.3); }
+  100% { opacity: 0; transform: translateY(-65%) scale(.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mining-pickaxe-swing, .mining-burst *, .mining-burst::before {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
