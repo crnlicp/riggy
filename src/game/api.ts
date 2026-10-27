@@ -19,7 +19,9 @@ export function signInErrorMessage(error: unknown): string {
 
 export function backend(identity?: Identity): Backend | null {
   if (!BACKEND_ID) return null;
-  return createActor(BACKEND_ID, { agentOptions: { identity, rootKey: env?.IC_ROOT_KEY } });
+  // Locally the gateway also serves the API on the page's own origin, which keeps calls same-origin for the CSP.
+  const host = window.location.hostname.endsWith(".localhost") ? window.location.origin : undefined;
+  return createActor(BACKEND_ID, { agentOptions: { identity, host, rootKey: env?.IC_ROOT_KEY } });
 }
 
 export function riggy(e8s: bigint): string {
