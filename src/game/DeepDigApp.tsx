@@ -6,6 +6,7 @@ import {
   backend,
   BACKEND_ID,
   riggy,
+  signInErrorMessage,
   SOON_URL,
 } from "./api";
 import {
@@ -40,6 +41,7 @@ import {
 } from "../bindings/backend";
 import { shortId, timeAgo } from "../format";
 import DigScene from "./DigScene";
+import WalletPage from "./WalletPage";
 import { COLLECTION_DURATION_MS, MiningBurst, PickaxeStrike, STRIKE_IMPACT_MS, type DigDirection } from "./MiningEffects";
 
 const LOGO = "/riggy.webp";
@@ -54,6 +56,11 @@ const BIOMES = [
 const E8S = 100_000_000n;
 
 type BoardTab = "daily" | "hall";
+type View = "game" | "wallet";
+
+function viewFromHash(): View {
+  return window.location.hash === "#wallet" ? "wallet" : "game";
+}
 type Toast = { text: string; kind: "info" | "error" | "success" };
 type DigEffect = { id: number; x: number; y: number; stage: "hammer" | "break" | "move" | "pickup"; direction?: DigDirection; lootKind?: "coin" | "gem"; stone?: boolean; glyph?: string; color?: string };
 const LOOT_COLORS: Record<string, string> = { coin: "#ffd45e", copper: "#ff9d55", silver: "#d6e6ff", gold: "#ffd45e", ruby: "#ff5876", sapphire: "#59a6ff", emerald: "#5ef2b0", diamond: "#baf7ff" };
@@ -113,6 +120,22 @@ export default function DeepDigApp() {
   const [upgradeBusy, setUpgradeBusy] = useState<Upgrade | null>(null);
   const [leaderboardVersion, setLeaderboardVersion] = useState(0);
   const effectId = useRef(0);
+  const [view, setView] = useState<View>(viewFromHash);
+  const viewRef = useRef<View>(view);
+  viewRef.current = view;
+
+  useEffect(() => {
+    const onHash = () => setView(viewFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  const openView = useCallback((next: View) => {
+    if (next === "wallet") window.location.hash = "wallet";
+    else if (window.location.hash) window.history.pushState(null, "", window.location.pathname + window.location.search);
+    setView(next);
+    window.scrollTo({ top: 0 });
+  }, []);
 
   const notify = useCallback((text: string, kind: Toast["kind"] = "info") => setToast({ text, kind }), []);
 
@@ -391,6 +414,7 @@ export default function DeepDigApp() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      if (viewRef.current !== "game") return;
       const key = event.key.toLowerCase();
       const move = key === "arrowup" || key === "w" ? MOVE_UP
         : key === "arrowright" || key === "d" ? MOVE_RIGHT
@@ -414,7 +438,10 @@ export default function DeepDigApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [doMove]);
 
-  const signIn = () => auth.signIn().then(setIdentity, () => notify("Sign-in was cancelled."));
+  const signIn = () => auth.signIn().then(setIdentity, (error: unknown) => {
+    console.error("Internet Identity sign-in failed", error);
+    notify(signInErrorMessage(error), "error");
+  });
   const signOut = () => auth.signOut().finally(() => setIdentity(null));
 
   const saveName = async (event: React.FormEvent) => {
@@ -511,10 +538,24 @@ export default function DeepDigApp() {
           <span>Riggy <b>Deep Dig</b></span>
         </a>
         <a className="g-link" href="/">📈 RIGGY price & charts</a>
+        <button className={`g-btn ghost sm wallet-nav ${view === "wallet" ? "active" : ""}`} onClick={() => openView(view === "wallet" ? "game" : "wallet")}>{view === "wallet" ? "⛏ Mine" : "👛 Wallet"}</button>
         {player ? <button className="g-btn ghost sm" onClick={signOut}>{profile?.name ?? shortId(playerText!)} · Sign out</button> : <button className="g-btn primary sm" onClick={signIn}>Sign in</button>}
       </header>
 
       <main className="g-main dig-main">
+        {view === "wallet" ? (
+          <WalletPage
+            identity={identity}
+            player={playerText}
+            config={config}
+            shift={shift}
+            recheckBusy={busy}
+            onRecheck={recheck}
+            onSignIn={signIn}
+            onBack={() => openView("game")}
+            notify={notify}
+          />
+        ) : (<>
         <section className="dig-intro">
           <div>
             <span className="g-pill">⛏ Daily mine · holder biomes · built on Soon</span>
@@ -570,11 +611,11 @@ export default function DeepDigApp() {
           </div>
 
           <aside className="dig-sidebar">
-            <ProfilePanel player={playerText} profile={profile} name={name} setName={setName} busy={nameBusy} onSave={saveName} onSignIn={signIn} />
+            <ProfilePanel player={playerText} profile={profile} name={name} setName={setName} busy={nameBusy} onSave={saveName} onSignIn={signIn} onOpenWallet={() => openView("wallet")} />
             <UpgradePanel profile={profile} busy={upgradeBusy} onBuy={buyUpgrade} />
             <Album profile={profile} />
             <Leaderboard tab={boardTab} setTab={setBoardTab} dailyRows={dailyRows} fameRows={fameRows} loading={boardLoading} player={playerText} />
-            <HolderPanel player={playerText} shift={shift} onSignIn={signIn} onRecheck={recheck} busy={busy} />
+            <HolderPanel player={playerText} shift={shift} onSignIn={signIn} onRecheck={recheck} onOpenWallet={() => openView("wallet")} busy={busy} />
           </aside>
         </section>
 
@@ -587,10 +628,11 @@ export default function DeepDigApp() {
           </div>
           <a className="g-btn primary" href={SOON_URL} target="_blank" rel="noopener noreferrer">Start a rig on Soon ↗</a>
         </section>
+        </>)}
       </main>
 
       <footer className="g-foot">
-        <p>A community game for $RIGGY, built on <a href="https://soonlaunchpad.fun" target="_blank" rel="noopener noreferrer">Soon</a>. Not affiliated with or endorsed by Soon. The game only reads balances; it never moves tokens.</p>
+        <p>A community game for $RIGGY, built on <a href="https://soonlaunchpad.fun" target="_blank" rel="noopener noreferrer">Soon</a>. Not affiliated with or endorsed by Soon. The game canister only reads your RIGGY balance; deposits and withdrawals happen in your wallet, signed by you, directly on the RIGGY ledger.</p>
         <p className="g-muted">Scores are game-only. Nothing here is financial advice. Never share a seed phrase or private key.</p>
       </footer>
       {toast && <button className={`g-toast dig-toast ${toast.kind}`} role="status" onClick={() => setToast(null)}>{toast.text}</button>}
@@ -695,23 +737,12 @@ function SavedResult({ result }: { result: NonNullable<ShiftView["result"]> }) {
   return <ResultPanel outcome={{ score: Number(result.score), gems: Number(result.gems), maxDepth: Number(result.maxDepth), counts: result.counts.map(Number), hauledValue: Number(result.score), banked: true, energyLeft: 0, moves: 0 }} saved={result} onAgain={() => window.scrollTo({ top: 0, behavior: "smooth" })} />;
 }
 
-function ProfilePanel({ player, profile, name, setName, busy, onSave, onSignIn }: { player?: string; profile: ProfileView | null; name: string; setName: (v: string) => void; busy: boolean; onSave: (e: React.FormEvent) => void; onSignIn: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const copyAddress = async () => {
-    if (!player) return;
-    try {
-      await navigator.clipboard.writeText(player);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
-    }
-  };
-  if (!player) return <div className="dig-side-section sign-in-panel"><div className="dig-panel-icon">🐹</div><h3>Your miner account</h3><p>Sign in with Internet Identity to claim today's shared mine, save a score and earn game coins.</p><div className="sign-in-actions"><button className="g-btn primary" onClick={onSignIn}>Sign in to dig</button><small>Sign-in uses a passkey. This game never asks for a seed phrase or private key.</small></div></div>;
+function ProfilePanel({ player, profile, name, setName, busy, onSave, onSignIn, onOpenWallet }: { player?: string; profile: ProfileView | null; name: string; setName: (v: string) => void; busy: boolean; onSave: (e: React.FormEvent) => void; onSignIn: () => void; onOpenWallet: () => void }) {
+  if (!player) return <div className="dig-side-section sign-in-panel"><div className="dig-panel-icon">🐹</div><h3>Your miner account</h3><p>Sign in with Internet Identity to claim today's shared mine, save a score, earn game coins and get a RIGGY wallet for holder perks.</p><div className="sign-in-actions"><button className="g-btn primary" onClick={onSignIn}>Sign in to dig</button><small>Sign-in uses a passkey. This game never asks for a seed phrase or private key.</small></div></div>;
   return (
     <div className="dig-side-section">
       <div className="dig-side-title"><span>⛏</span><h3>Miner profile</h3></div>
-      <div className="dig-profile-id"><img src={LOGO} alt="" /><div><strong>{profile?.name ?? "New miner"}</strong><small title={player}>{shortId(player)}</small></div><button type="button" className="dig-copy-address" onClick={copyAddress}>{copied ? "Copied" : "Copy address"}</button><b>{fmtNum(profile?.coins ?? 0n)}<small> coins</small></b></div>
+      <div className="dig-profile-id"><img src={LOGO} alt="" /><div><strong>{profile?.name ?? "New miner"}</strong><small title={player}>{shortId(player)}</small></div><button type="button" className="dig-copy-address" onClick={onOpenWallet}>👛 Wallet</button><b>{fmtNum(profile?.coins ?? 0n)}<small> coins</small></b></div>
       <form className="dig-name-form" onSubmit={onSave}><input aria-label="Miner name" maxLength={16} minLength={3} value={name} onChange={(e) => setName(e.target.value)} placeholder="Choose a miner name" /><button className="g-btn ghost sm" disabled={busy || name.trim().length < 3}>{busy ? "…" : "Save"}</button></form>
       <div className="dig-profile-stats"><span>Shifts <b>{profile?.shifts.toString() ?? "0"}</b></span><span>Holding streak <b>{profile?.streak.toString() ?? "0"} days</b></span><span>All-time score <b>{fmtNum(profile?.totalScore ?? 0n)}</b></span></div>
     </div>
@@ -762,17 +793,18 @@ function Leaderboard({ tab, setTab, dailyRows, fameRows, loading, player }: { ta
   );
 }
 
-function HolderPanel({ player, shift, onSignIn, onRecheck, busy }: { player?: string; shift: ShiftView | null; onSignIn: () => void; onRecheck: () => void; busy: boolean }) {
+function HolderPanel({ player, shift, onSignIn, onRecheck, onOpenWallet, busy }: { player?: string; shift: ShiftView | null; onSignIn: () => void; onRecheck: () => void; onOpenWallet: () => void; busy: boolean }) {
   const tier = Number(shift?.tier ?? 0n);
   const maxBiome = Number(shift?.maxBiome ?? 1n);
   return (
     <div className="dig-side-section holder-panel">
       <div className="dig-side-title"><span>🪙</span><h3>Holder access</h3></div>
-      {player ? <><p>Current shift tier: <b>Tier {tier}</b> · {maxBiome + 1} biomes open.</p>{shift && !shift.verified && <p className="dig-ledger-note">RIGGY balance couldn't be verified; this shift has free-tier access only.</p>}<button className="g-btn ghost sm" onClick={onRecheck} disabled={busy}>↻ Recheck RIGGY balance</button></> : <><p>Hold RIGGY in your game account to unlock deeper biomes and add energy each day.</p><button className="g-text-btn" onClick={onSignIn}>Sign in to create your game account</button></>}
+      {player ? <><p>Current shift tier: <b>Tier {tier}</b> · {maxBiome + 1} biomes open.</p>{shift && !shift.verified && <p className="dig-ledger-note">RIGGY balance couldn't be verified; this shift has free-tier access only.</p>}<div className="holder-actions"><button className="g-btn primary sm" onClick={onOpenWallet}>👛 Open wallet</button><button className="g-btn ghost sm" onClick={onRecheck} disabled={busy}>↻ Recheck balance</button></div></> : <><p>Hold RIGGY in your game wallet to unlock deeper biomes and add energy each day.</p><button className="g-text-btn" onClick={onSignIn}>Sign in to create your game wallet</button></>}
       <ol className="holder-steps">
-        <li>Sign in. Copy your game account address from Miner profile.</li>
-        <li>Buy RIGGY on Soon with your own wallet.</li>
-        <li>Send RIGGY to your game account. The game checks its balance when you start a shift.</li>
+        <li>Sign in, then open <b>Wallet</b> to see your game wallet principal and QR code.</li>
+        <li>Buy RIGGY on Soon, then send it from Soon to your game wallet principal.</li>
+        <li>Your tier is set by the RIGGY balance in your game wallet when you start a shift. Deposited mid-shift? Tap Recheck.</li>
+        <li>Withdraw any time from Wallet to your Soon principal or any other principal.</li>
       </ol>
       <div className="holder-tiers">
         <span><b>1,000</b> RIGGY <em>Deep Shaft · +20 energy</em></span>
@@ -780,7 +812,7 @@ function HolderPanel({ player, shift, onSignIn, onRecheck, busy }: { player?: st
         <span><b>100,000</b> RIGGY <em>The Core · +60 energy</em></span>
       </div>
       <a href={SOON_URL} target="_blank" rel="noopener noreferrer">Buy RIGGY on Soon ↗</a>
-      <small>Internet Identity has a different principal on each site. Transfer RIGGY to your game account to qualify; account linking is planned.</small>
+      <small>Internet Identity gives each site its own principal, so your Soon wallet and your game wallet are separate addresses. Only RIGGY in your game wallet counts for tiers. Your tokens stay yours: only you can sign transfers out of it.</small>
     </div>
   );
 }

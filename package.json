@@ -13,12 +13,14 @@
   "dependencies": {
     "@icp-sdk/auth": "^11.0.0",
     "@icp-sdk/core": "^6.1.1",
+    "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@icp-sdk/bindgen": "^0.4.1",
     "@types/node": "^26.6.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",

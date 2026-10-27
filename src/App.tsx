@@ -470,7 +470,7 @@ function GamePromo() {
           <div>
             <h3>Dig down the shaft, dodge the rocks, top the leaderboard.</h3>
             <p className="muted">
-              Sign in, then send RIGGY from your Soon wallet to your game account. Holder tiers unlock deeper biomes and add daily energy; your tokens stay yours.
+              Sign in, open Wallet and send RIGGY from Soon to your game wallet principal (QR included). Holder tiers unlock deeper biomes and add daily energy; withdraw any time, your tokens stay yours.
             </p>
             <span className="btn primary play-link">
               <span>⛏ Play Deep Dig</span> <Arrow />
