@@ -1522,6 +1522,31 @@ h1 {
   }
 }
 
+@media (max-width: 760px) {
+  .nav {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .nav .brand {
+    flex-shrink: 0;
+  }
+  .nav .brand span {
+    display: none;
+  }
+  .nav .brand img {
+    width: 32px;
+    height: 32px;
+  }
+  .nav .btn {
+    justify-content: center;
+    flex-shrink: 0;
+    min-height: 36px;
+    gap: 5px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+}
+
 @media (max-width: 520px) {
   .stats {
     grid-template-columns: repeat(2, 1fr);

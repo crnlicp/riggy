@@ -110,7 +110,7 @@ function Nav() {
   }, []);
   return (
     <header className={`nav ${scrolled ? "scrolled" : ""}`}>
-      <a className="brand" href="#top">
+      <a className="brand" href="#top" aria-label="$RIGGY home">
         <img src="/riggy.webp" alt="" width={36} height={36} />
         <span>$RIGGY</span>
       </a>

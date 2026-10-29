@@ -533,13 +533,20 @@ export default function DeepDigApp() {
         {Array.from({ length: 14 }, (_, i) => <span key={i} className="g-ore" style={{ ["--i" as string]: i }} />)}
       </div>
       <header className="g-top">
-        <a className="g-brand" href="/play">
+        <a className="g-brand" href="/play" aria-label="Riggy Deep Dig home">
           <img src={LOGO} alt="" width={34} height={34} />
           <span>Riggy <b>Deep Dig</b></span>
         </a>
-        <a className="g-link" href="/">📈 RIGGY price & charts</a>
-        <button className={`g-btn ghost sm wallet-nav ${view === "wallet" ? "active" : ""}`} onClick={() => openView(view === "wallet" ? "game" : "wallet")}>{view === "wallet" ? "⛏ Mine" : "👛 Wallet"}</button>
-        {player ? <button className="g-btn ghost sm" onClick={signOut}>{profile?.name ?? shortId(playerText!)} · Sign out</button> : <button className="g-btn primary sm" onClick={signIn}>Sign in</button>}
+        <a className="g-link g-btn ghost sm" href="/"><span className="g-desktop-label">📈 RIGGY price & charts</span><span className="g-mobile-label">Market</span></a>
+        <button className={`g-btn ghost sm wallet-nav ${!player ? "signed-out-wallet" : ""} ${view === "wallet" ? "active" : ""}`} onClick={() => openView(view === "wallet" ? "game" : "wallet")}>{view === "wallet" ? "⛏ Mine" : "👛 Wallet"}</button>
+        {player ? (
+          <button className="g-btn ghost sm g-logout" onClick={signOut} aria-label="Sign out" title="Sign out">
+            <span className="g-desktop-label">{profile?.name ?? shortId(playerText!)} · Sign out</span>
+            <svg className="g-mobile-label" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+          </button>
+        ) : <button className="g-btn primary sm" onClick={signIn}>Sign in</button>}
       </header>
 
       <main className="g-main dig-main">
